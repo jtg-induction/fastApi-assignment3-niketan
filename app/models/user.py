@@ -11,6 +11,7 @@ from app.models.restaurant import Restaurant
 from app.types.user import UserRole
 
 if TYPE_CHECKING:
+    from app.models.cart import Cart
     from app.models.restaurant import Restaurant
 
 pwd_context = PasswordHash.recommended()
@@ -34,6 +35,9 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
     restaurants: Mapped[list["Restaurant"]] = relationship(
         "Restaurant", back_populates="owner", cascade="all, delete-orphan"
+    )
+    carts: Mapped[list["Cart"]] = relationship(
+        "Cart", back_populates="user", cascade="all, delete-orphan"
     )
 
     @validates("name")
