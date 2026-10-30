@@ -22,6 +22,7 @@ class User(Base):
     mobile: Mapped[str] = mapped_column(nullable=False)
     address: Mapped[str] = mapped_column(nullable=False)
     role: Mapped[UserRole] = mapped_column(nullable=False)
+    isActive: Mapped[bool] = mapped_column(nullable=False, default=True)
     refreshToken: Mapped[str] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
