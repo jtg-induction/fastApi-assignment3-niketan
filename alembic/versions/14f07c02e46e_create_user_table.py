@@ -1,8 +1,8 @@
 """create user table
 
-Revision ID: be5d5fc973d9
+Revision ID: 14f07c02e46e
 Revises:
-Create Date: 2026-10-29 23:25:20.322979
+Create Date: 2026-10-30 14:07:06.094480
 
 """
 
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "be5d5fc973d9"
+revision: str = "14f07c02e46e"
 down_revision: str | Sequence[str] | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -32,6 +32,7 @@ def upgrade() -> None:
         sa.Column("mobile", sa.String(), nullable=False),
         sa.Column("address", sa.String(), nullable=False),
         sa.Column("role", sa.Enum("OWNER", "CUSTOMER", name="userrole"), nullable=False),
+        sa.Column("isActive", sa.Boolean(), nullable=False),
         sa.Column("refreshToken", sa.String(), nullable=True),
         sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),

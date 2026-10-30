@@ -1,9 +1,12 @@
 import os
 
+import jwt
 from fastapi import Cookie, HTTPException, status
-from jose import JWTError, jwt
+from jwt.exceptions import DecodeError
 
-JWT_SECRET = os.getenv("JWT_SECRET", "supersecretkey")
+from app.core.config import settings
+
+JWT_SECRET = settings.JWT_SECRET
 
 
 def get_current_user_id(
@@ -33,7 +36,7 @@ def get_current_user_id(
 
         return int(user_id)
 
-    except JWTError:
+    except DecodeError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Session expired or invalid token.",
