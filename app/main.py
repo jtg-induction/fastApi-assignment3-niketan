@@ -3,6 +3,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.routers.restaurant import restaurantRouter
 from app.routers.user import router
 
 app = FastAPI()
@@ -43,6 +44,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 app.include_router(router)
+app.include_router(restaurantRouter)
 
 
 @app.get("/")
