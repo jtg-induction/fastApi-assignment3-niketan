@@ -1,11 +1,11 @@
 import os
 from logging.config import fileConfig
 
+from app.models.user import User
 from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
 from app.db.session import Base
-from app.models.user import User
 
 load_dotenv()
 
