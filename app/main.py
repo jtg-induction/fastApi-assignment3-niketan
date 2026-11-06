@@ -3,6 +3,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.routers.Auth import auth_router
 from app.routers.user import router
 
 app = FastAPI()
@@ -43,8 +44,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 app.include_router(router)
+app.include_router(auth_router)
 
 
 @app.get("/")
 def root():
-    return {"message": f"hlo fast API and id"}
+    return {"message": "hlo fast API and id"}

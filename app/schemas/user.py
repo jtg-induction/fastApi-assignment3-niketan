@@ -1,37 +1,39 @@
-from enum import Enum
+from typing import Generic, TypeVar
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.types.user import UserRole
 
-class RoleEnum(str, Enum):
-    OWNER = "OWNER"
-    CUSTOMER = "CUSTOMER"
-
-
-class signUpUserRequest(BaseModel):
-    name: str
-    email: EmailStr
-    phone: str
-    address: str
-    password: str
-    accountType: RoleEnum
+DataType = TypeVar("DataType")
 
 
-class UserResponse(BaseModel):
-    id: int
-    name: str
-    email: EmailStr
-    mobile: str
-    role: RoleEnum
-
-    class Config:
-        from_attributes = True
-
-
-class loginUserResponse(UserResponse):
+class ApiResponse(BaseModel, Generic[DataType]):
     message: str
+    data: DataType | None = None
 
 
-class loginUserRequest(BaseModel):
+class UserBase(BaseModel):
+    name: str = Field(min_length=2, max_length=50, description="The name of the user")
     email: EmailStr
-    password: str
+    mobile: str = Field(min_length=10, max_length=15, description="Mobile number of the user")
+    address: str = Field(min_length=5, max_length=255)
+    role: UserRole
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+
+class SignUpUserRequest(UserBase):
+    password: str = Field(min_length=8, max_length=64, strip_whitespace=False)
+
+
+class LoginUserRequest(BaseModel):
+    email: EmailStr = Field(strip_whitespace=True)
+    password: str = Field(min_length=8, max_length=64, strip_whitespace=False)
+
+
+class UserResponse(UserBase):
+    id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+LoginUserResponse = ApiResponse[UserResponse]
+LogOutUserResponse = ApiResponse[None]

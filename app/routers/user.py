@@ -1,53 +1,56 @@
-from fastapi import APIRouter, Cookie, Depends, Response, status
-from sqlalchemy.orm import Session
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.middleware.auth import get_current_user_id
-from app.schemas.user import (
-    UserResponse,
-    loginUserRequest,
-    loginUserResponse,
-    signUpUserRequest,
-)
-from app.services.user import (
-    getProfile,
-    loginUser,
-    logOutUser,
-    refreshAccessToken,
-    register_user,
-)
+from app.schemas.user import ApiResponse, SignUpUserRequest, UserResponse
+from app.services.user import UserService
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.post("/signup", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
-def create_user(body_data: signUpUserRequest, db: Session = Depends(get_db)):
-    return register_user(db, body_data)
+@router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    response_model=ApiResponse[UserResponse],
+)
+async def create_user(user_data: SignUpUserRequest, db: Annotated[AsyncSession, Depends(get_db)]):
+    """Register a new user account after validating the input details.
+
+    Args:
+        user_data (SignUpUserRequest): Pydantic schema containing registration details such as email and password.
+        db (AsyncSession): Asynchronous database session dependency injected via FastAPI Depends.
+
+    Returns:
+        ApiResponse[UserResponse]: Wrapped API response containing a success message and the created user's profile details.
+    """
+    user_service = UserService(db)
+    new_user = await user_service.register_user(user_data)
+
+    return ApiResponse(
+        message="User registered successfully", data=UserResponse.model_validate(new_user)
+    )
 
 
-@router.post("/login", status_code=status.HTTP_201_CREATED, response_model=loginUserResponse)
-def login_user(body_data: loginUserRequest, response: Response, db: Session = Depends(get_db)):
-    return loginUser(db, response, body_data)
-
-
-@router.post("/refresh", status_code=status.HTTP_200_OK, response_model=dict)
-def refreshToken(
-    response: Response,
-    refresh_token: str | None = Cookie(default=None),
-    db: Session = Depends(get_db),
+@router.get("/me", status_code=status.HTTP_200_OK, response_model=ApiResponse[UserResponse])
+async def get_current_user_profile(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user_id: Annotated[int, Depends(get_current_user_id)],
 ):
-    return refreshAccessToken(db, response, refresh_token)
+    """Retrieve the profile data of the currently authenticated user session.
 
+    Args:
+        db (AsyncSession): Asynchronous database session dependency injected via FastAPI Depends.
+        user_id (int): Primary key ID of the user, extracted and validated from the active auth token.
 
-@router.post("/logout", status_code=200, response_model=dict)
-def logOut(
-    response: Response, db: Session = (Depends(get_db)), user_id: int = Depends(get_current_user_id)
-):
-    return logOutUser(db, response, user_id)
+    Returns:
+        ApiResponse[UserResponse]: Wrapped API response containing a success message and the user's current profile data.
+    """
+    user_service = UserService(db)
+    user = await user_service.get_profile(user_id)
 
-
-@router.get("/me", status_code=status.HTTP_200_OK, response_model=UserResponse)
-def get_current_user_profile(
-    db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)
-):
-    return getProfile(db, user_id)
+    return ApiResponse(
+        message="Profile fetched successfully", data=UserResponse.model_validate(user)
+    )

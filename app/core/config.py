@@ -1,9 +1,10 @@
-import os
+from enum import Enum
 
+from pydantic import Field, PostgresDsn, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Messages:
+class Messages(str, Enum):
     EMAIL_EXISTS = "Email already exists"
     AUTH_FAILED = "Email or password is incorrect"
     ACCOUNT_INACTIVE = "Your account is inactive. Please contact support."
@@ -18,8 +19,8 @@ class Messages:
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str
-    JWT_SECRET: str
+    DATABASE_URL: PostgresDsn
+    JWT_SECRET: SecretStr = Field(max_length=30)
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -27,4 +28,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-msg = Messages()
