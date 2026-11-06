@@ -1,12 +1,17 @@
 import re
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from pwdlib import PasswordHash
 from sqlalchemy import CheckConstraint, func
-from sqlalchemy.orm import Mapped, mapped_column, validates
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from app.db.session import Base
+from app.models.restaurant import Restaurant
 from app.types.user import UserRole
+
+if TYPE_CHECKING:
+    from app.models.restaurant import Restaurant
 
 pwd_context = PasswordHash.recommended()
 
@@ -27,6 +32,9 @@ class User(Base):
     refresh_token: Mapped[str | None] = mapped_column()
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    restaurants: Mapped[list["Restaurant"]] = relationship(
+        "Restaurant", back_populates="owner", cascade="all, delete-orphan"
+    )
 
     @validates("name")
     def validate_name(self, key, value) -> str:
