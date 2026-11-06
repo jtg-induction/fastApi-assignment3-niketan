@@ -17,6 +17,14 @@ class Messages(str, Enum):
     TOKEN_REFRESH_SUCCESS = "New Access Token generated successfully"
     LOGOUT_SUCCESS = "Logged out successfully"
 
+    RESTAURANT_CREATED = "Restaurant created successfully"
+    RESTAURANT_DELETED = "Restaurant deleted successfully"
+    RESTAURANT_NOT_FOUND = "Restaurant not found"
+    RESTAURANT_EDIT_FORBIDDEN = "Only owner can edit restaurant"
+    RESTAURANT_DELETE_FORBIDDEN = "Only owner can delete restaurant"
+    RESTAURANT_VIEW_FORBIDDEN = "You do not have permission to view this restaurant"
+    RESTAURANT_NOT_OWNED = "You do not own this restaurant"
+
 
 class Settings(BaseSettings):
     DATABASE_URL: PostgresDsn
