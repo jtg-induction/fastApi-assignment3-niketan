@@ -3,7 +3,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+import app.models
 from app.routers.Auth import auth_router
+from app.routers.cart import cart_router
 from app.routers.menuItem import menu_item_router
 from app.routers.restaurant import restaurant_router
 from app.routers.user import router
@@ -49,6 +51,7 @@ app.include_router(router)
 app.include_router(auth_router)
 app.include_router(restaurant_router)
 app.include_router(menu_item_router)
+app.include_router(cart_router)
 
 
 @app.get("/")

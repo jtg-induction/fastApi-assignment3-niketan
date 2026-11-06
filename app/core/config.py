@@ -32,6 +32,17 @@ class Messages(str, Enum):
     MENU_ITEM_EDIT_FORBIDDEN = "You do not have permission to edit items for this restaurant"
     MENU_ITEM_DELETE_FORBIDDEN = "You do not have permission to delete this menu item"
 
+    CART_ACTIVE_NOT_FOUND = "No active cart found for this restaurant."
+    CART_NOT_FOUND = "Cart not found."
+    CART_DOES_NOT_EXIST = "Cart does not exist."
+    CART_ITEM_WRONG_RESTAURANT = "This menu item does not belong to the specified restaurant."
+    CART_ITEM_OUT_OF_STOCK = "'{name}' is currently out of stock."
+    CART_ITEM_INSUFFICIENT_STOCK = "Only {stock} units of '{name}' are available."
+    CART_ITEM_REMOVED_EMPTY = "Item removed and empty cart deleted."
+    CART_UPDATED = "Cart updated successfully."
+    CART_DELETE_FORBIDDEN = "Not authorized to delete this cart."
+    CART_DELETED = "Cart deleted successfully."
+
 
 class Settings(BaseSettings):
     DATABASE_URL: PostgresDsn
