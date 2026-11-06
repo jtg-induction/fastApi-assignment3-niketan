@@ -1,5 +1,5 @@
 from fastapi import status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.restaurant import Restaurant
 from app.repositories.restaurant import RestaurantRepository
@@ -7,86 +7,102 @@ from app.schemas.restaurant import FilterParams, RestaurantBase, RestaurantCreat
 from app.utils.utils import raise_http_error
 
 
-def createRestaurant(
-    db: Session, body_data: RestaurantBase, user_id: int
-) -> RestaurantCreateResponse:
-    print(body_data)
-    repo = RestaurantRepository(db)
+class RestaurantService:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+        self.repo = RestaurantRepository(db)
 
-    user = repo.get_user_by_id(user_id)
-    if not user or user.role == "CUSTOMER":
-        raise_http_error(status.HTTP_403_FORBIDDEN, "only owner can edit restaurant")
+    async def create_restaurant(
+        self, body_data: RestaurantBase, user_id: int
+    ) -> RestaurantCreateResponse:
+        user = await self.repo.get_user_by_id(user_id)
+        if not user or user.role == "CUSTOMER":
+            raise_http_error(status.HTTP_403_FORBIDDEN, "only owner can edit restaurant")
 
-    restaurant = repo.create_restaurant(body_data, user_id)
-    return {
-        **body_data.model_dump(),
-        "id": restaurant.id,
-        "ownerId": user_id,
-        "message": "restaurant created successfully",
-    }
+        restaurant = await self.repo.create_restaurant(body_data, user_id)
+        try:
+            await self.db.commit()
+            await self.db.refresh(restaurant)
+        except Exception:
+            await self.db.rollback()
+            raise
+        return {
+            **body_data.model_dump(),
+            "id": restaurant.id,
+            "owner_id": user_id,
+            "message": "restaurant created successfully",
+        }
 
+    async def get_restaurant(self, restaurant_id: int, user_id: int) -> Restaurant:
 
-def getRestaurant(db: Session, restaurant_id: int, user_id: int) -> Restaurant:
-    repo = RestaurantRepository(db)
+        user = await self.repo.get_user_by_id(user_id)
+        if not user:
+            raise_http_error(status.HTTP_404_NOT_FOUND, "User not found")
 
-    user = repo.get_user_by_id(user_id)
-    if not user:
-        raise_http_error(status.HTTP_404_NOT_FOUND, "User not found")
+        restaurant = await self.repo.get_restaurant_by_id(restaurant_id, active_only=True)
+        if not restaurant:
+            raise_http_error(status.HTTP_404_NOT_FOUND, "Restaurant not found")
 
-    restaurant = repo.get_restaurant_by_id(restaurant_id, active_only=True)
-    if not restaurant:
-        raise_http_error(status.HTTP_404_NOT_FOUND, "Restaurant not found")
+        if user.role != "CUSTOMER" and restaurant.owner_id != user_id:
+            raise_http_error(
+                status.HTTP_403_FORBIDDEN, "You do not have permission to view this restaurant"
+            )
 
-    if user.role != "CUSTOMER" and restaurant.ownerId != user_id:
-        raise_http_error(
-            status.HTTP_403_FORBIDDEN, "You do not have permission to view this restaurant"
-        )
+        return restaurant
 
-    return restaurant
+    async def update_restaurant(
+        self, restaurant_id: int, body_data: RestaurantBase, user_id: int
+    ) -> Restaurant:
 
+        user = await self.repo.get_user_by_id(user_id)
+        if not user or user.role == "CUSTOMER":
+            raise_http_error(status.HTTP_403_FORBIDDEN, "only owner can edit restaurant")
 
-def updateRestaurant(
-    db: Session, restaurant_id: int, body_data: RestaurantBase, user_id: int
-) -> Restaurant:
-    repo = RestaurantRepository(db)
+        restaurant = await self.repo.get_restaurant_by_id(restaurant_id, active_only=True)
+        if not restaurant:
+            raise_http_error(status.HTTP_404_NOT_FOUND, "restaurant not found")
 
-    user = repo.get_user_by_id(user_id)
-    if not user or user.role == "CUSTOMER":
-        raise_http_error(status.HTTP_403_FORBIDDEN, "only owner can edit restaurant")
+        if restaurant.owner_id != user_id:
+            raise_http_error(status.HTTP_403_FORBIDDEN, "you do not own this restaurant")
 
-    restaurant = repo.get_restaurant_by_id(restaurant_id, active_only=True)
-    if not restaurant:
-        raise_http_error(status.HTTP_404_NOT_FOUND, "restaurant not found")
+        updated_restaurant = await self.repo.update_restaurant(restaurant, body_data)
 
-    if restaurant.ownerId != user_id:
-        raise_http_error(status.HTTP_403_FORBIDDEN, "you do not own this restaurant")
+        try:
+            await self.db.commit()
+            await self.db.refresh(updated_restaurant)
+        except Exception:
+            await self.db.rollback()
+            raise
 
-    return repo.update_restaurant(restaurant, body_data)
+        return updated_restaurant
 
+    async def delete_restaurant(self, restaurant_id: int, user_id: int) -> dict:
 
-def deleteRestaurant(db: Session, restaurant_id: int, user_id: int) -> dict:
-    repo = RestaurantRepository(db)
+        user = await self.repo.get_user_by_id(user_id)
+        if not user or user.role == "CUSTOMER":
+            raise_http_error(status.HTTP_401_UNAUTHORIZED, "only owner can delete restaurant")
 
-    user = repo.get_user_by_id(user_id)
-    if not user or user.role == "CUSTOMER":
-        raise_http_error(status.HTTP_401_UNAUTHORIZED, "only owner can delete restaurant")
+        restaurant = await self.repo.get_restaurant_by_id(restaurant_id, active_only=True)
+        if not restaurant:
+            raise_http_error(status.HTTP_404_NOT_FOUND, "restaurant not found")
 
-    restaurant = repo.get_restaurant_by_id(restaurant_id, active_only=True)
-    if not restaurant:
-        raise_http_error(status.HTTP_404_NOT_FOUND, "restaurant not found")
+        if restaurant.owner_id != user_id:
+            raise_http_error(status.HTTP_403_FORBIDDEN, "you do not own this restaurant")
 
-    if restaurant.ownerId != user_id:
-        raise_http_error(status.HTTP_403_FORBIDDEN, "you do not own this restaurant")
+        await self.repo.delete_restaurant(restaurant)
+        try:
+            await self.db.commit()
+        except Exception:
+            await self.db.rollback()
+            raise
+        return {"message": "restaurant deleted successfully", "id": restaurant_id}
 
-    repo.delete_restaurant(restaurant)
-    return {"message": "restaurant deleted successfully", "id": restaurant_id}
+    async def get_all_restaurant(
+        self, user_id: int, filter_query: FilterParams
+    ) -> list[Restaurant]:
 
+        user = await self.repo.get_user_by_id(user_id)
+        if not user:
+            raise_http_error(status.HTTP_404_NOT_FOUND, "User not found")
 
-def getAllRestaurants(db: Session, user_id: int, filter_query: FilterParams) -> list[Restaurant]:
-    repo = RestaurantRepository(db)
-
-    user = repo.get_user_by_id(user_id)
-    if not user:
-        raise_http_error(status.HTTP_404_NOT_FOUND, "User not found")
-
-    return repo.get_all_restaurants(user, filter_query)
+        return await self.repo.get_all_restaurants(user, filter_query)
