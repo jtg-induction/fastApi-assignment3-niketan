@@ -25,6 +25,13 @@ class Messages(str, Enum):
     RESTAURANT_VIEW_FORBIDDEN = "You do not have permission to view this restaurant"
     RESTAURANT_NOT_OWNED = "You do not own this restaurant"
 
+    MENU_ITEM_CREATED = "Menu item created successfully"
+    MENU_ITEM_DELETED = "Menu item deleted successfully"
+    MENU_ITEM_NOT_FOUND = "Menu item not found"
+    MENU_ITEM_ADD_FORBIDDEN = "You do not have permission to add menu items to this restaurant"
+    MENU_ITEM_EDIT_FORBIDDEN = "You do not have permission to edit items for this restaurant"
+    MENU_ITEM_DELETE_FORBIDDEN = "You do not have permission to delete this menu item"
+
 
 class Settings(BaseSettings):
     DATABASE_URL: PostgresDsn
