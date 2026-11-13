@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from app.db.session import Base
 
 if TYPE_CHECKING:
+    from app.models.menuItem import MenuItem
     from app.models.user import User
 
 
@@ -34,6 +35,9 @@ class Restaurant(Base):
     is_veg_only: Mapped[bool] = mapped_column(default=True)
     hours: Mapped[dict[str, any]] = mapped_column(JSONB)
     owner: Mapped["User"] = relationship("User", back_populates="restaurants")
+    menu_items: Mapped[list["MenuItem"]] = relationship(
+        "MenuItem", back_populates="restaurant", cascade="all, delete-orphan"
+    )
 
     @validates("name", "cuisine")
     def validate_lengths(self, key: str, value: str) -> str:
