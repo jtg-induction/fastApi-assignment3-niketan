@@ -12,6 +12,7 @@ from app.types.user import UserRole
 
 if TYPE_CHECKING:
     from app.models.cart import Cart
+    from app.models.orders import Order
     from app.models.restaurant import Restaurant
 
 pwd_context = PasswordHash.recommended()
@@ -38,6 +39,9 @@ class User(Base):
     )
     carts: Mapped[list["Cart"]] = relationship(
         "Cart", back_populates="user", cascade="all, delete-orphan"
+    )
+    orders: Mapped[list["Order"]] = relationship(
+        "Order", back_populates="customer", cascade="all, delete-orphan"
     )
 
     @validates("name")

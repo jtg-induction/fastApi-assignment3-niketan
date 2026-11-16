@@ -7,6 +7,7 @@ import app.models
 from app.routers.Auth import auth_router
 from app.routers.cart import cart_router
 from app.routers.menuItem import menu_item_router
+from app.routers.Order import order_router
 from app.routers.restaurant import restaurant_router
 from app.routers.user import router
 
@@ -52,6 +53,7 @@ app.include_router(auth_router)
 app.include_router(restaurant_router)
 app.include_router(menu_item_router)
 app.include_router(cart_router)
+app.include_router(order_router)
 
 
 @app.get("/")

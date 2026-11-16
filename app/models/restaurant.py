@@ -10,6 +10,7 @@ from app.db.session import Base
 if TYPE_CHECKING:
     from app.models.cart import Cart
     from app.models.menuItem import MenuItem
+    from app.models.orders import Order
     from app.models.user import User
 
 
@@ -41,6 +42,9 @@ class Restaurant(Base):
     )
     carts: Mapped[list["Cart"]] = relationship(
         "Cart", back_populates="restaurant", cascade="all, delete-orphan"
+    )
+    orders: Mapped[list["Order"]] = relationship(
+        "Order", back_populates="restaurant", cascade="all, delete-orphan"
     )
 
     @validates("name", "cuisine")
