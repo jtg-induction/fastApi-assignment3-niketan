@@ -2,16 +2,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.restaurant import Restaurant
-from app.models.user import User
 from app.schemas.restaurant import FilterParams, RestaurantBase
 
 
 class RestaurantRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
-
-    async def get_user_by_id(self, user_id: int) -> User | None:
-        return await self.db.scalar(select(User).where(User.id == user_id))
 
     async def get_restaurant_by_id(
         self, restaurant_id: int, active_only: bool = True
@@ -26,7 +22,6 @@ class RestaurantRepository:
             name=body_data.name,
             owner_id=user_id,
             cuisine=body_data.cuisine,
-            rating=body_data.rating,
             mobile=body_data.mobile,
             address=body_data.address,
             image=str(body_data.image),
@@ -42,7 +37,6 @@ class RestaurantRepository:
     ) -> Restaurant:
         restaurant.name = body_data.name
         restaurant.cuisine = body_data.cuisine
-        restaurant.rating = body_data.rating
         restaurant.mobile = body_data.mobile
         restaurant.address = body_data.address
         restaurant.image = str(body_data.image)
@@ -53,11 +47,13 @@ class RestaurantRepository:
     async def delete_restaurant(self, restaurant: Restaurant) -> None:
         restaurant.is_active = False
 
-    async def get_all_restaurants(self, user: User, filter_query: FilterParams) -> list[Restaurant]:
-        if user.role == "CUSTOMER":
-            stmt = select(Restaurant).where(Restaurant.is_active)
-        else:
-            stmt = select(Restaurant).where(Restaurant.owner_id == user.id, Restaurant.is_active)
+    async def get_all_restaurants(
+        self, filter_query: FilterParams, owner_id: int | None = None
+    ) -> list[Restaurant]:
+
+        stmt = select(Restaurant).where(Restaurant.is_active)
+        if owner_id is not None:
+            stmt = stmt.where(Restaurant.owner_id == owner_id)
 
         if filter_query.veg_mode:
             stmt = stmt.where(Restaurant.is_veg_only)
@@ -68,7 +64,11 @@ class RestaurantRepository:
                 | (Restaurant.cuisine.ilike(f"%{filter_query.search}%"))
             )
 
-        stmt = stmt.limit(filter_query.limit).offset(filter_query.offset)
+        stmt = (
+            stmt.limit(filter_query.limit)
+            .offset(filter_query.offset)
+            .order_by(Restaurant.id.desc())
+        )
         result = await self.db.scalars(stmt)
 
         return list(result.all())

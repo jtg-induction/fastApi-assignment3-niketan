@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
+from app.core.config import Messages
+
 
 class FilterParams(BaseModel):
     veg_mode: bool = Field(default=False)
@@ -8,47 +10,52 @@ class FilterParams(BaseModel):
     offset: int = Field(default=0, ge=0)
 
 
-class OperatingTImes(BaseModel):
+class OperatingTimes(BaseModel):
     open: str = Field(examples=["09:00 AM"])
     close: str = Field(examples=["10:00 PM"])
-    is_open: bool
+    is_open: bool = Field(alias="isOpen")
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )
 
 
 class OperatingHours(BaseModel):
-    monday: OperatingTImes
-    tuesday: OperatingTImes
-    wednesday: OperatingTImes
-    thrusday: OperatingTImes
-    friday: OperatingTImes
-    saturday: OperatingTImes
-    sunday: OperatingTImes
+    monday: OperatingTimes
+    tuesday: OperatingTimes
+    wednesday: OperatingTimes
+    thrusday: OperatingTimes
+    friday: OperatingTimes
+    saturday: OperatingTimes
+    sunday: OperatingTimes
 
 
 class RestaurantBase(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     cuisine: str = Field(min_length=1, max_length=100)
-    mobile: str = Field(examples=["+919053573774"])
+    mobile: str = Field(
+        examples=["+919053573774"], alias="mobileNumber", min_length=10, max_length=13
+    )
     address: str = Field(min_length=1, max_length=255)
-    rating: float = Field(default=0.0, ge=0.0, le=5.0)
     image: HttpUrl
-    is_veg_only: bool = True
+    is_veg_only: bool = Field(default=True, alias="isVegOnly")
     hours: OperatingHours
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )
 
 
-class RestaurantCreateResponse(RestaurantBase):
+class GetRestaurantResponse(RestaurantBase):
     id: int
+    rating: float | None = Field(default=None, ge=0.0, le=5.0)
+
+
+class RestaurantCreateResponse(GetRestaurantResponse):
     owner_id: int
-    message: str
-
-
-class RestaurantUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=1, max_length=100)
-    cuisine: str | None = Field(default=None, min_length=1, max_length=100)
-    mobile: str | None = Field(default=None, alias="mobile")
-    address: str | None = Field(default=None, min_length=1, max_length=255)
-    image: HttpUrl | None = Field(default=None)
-    is_veg_only: bool | None = Field(default=None, alias="isVegOnly")
-    hours: OperatingHours | None = Field(default=None)
+    message: str = Messages.RESTAURANT_CREATED
 
 
 class RestaurantUpdateResponse(BaseModel):

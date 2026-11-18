@@ -1,8 +1,8 @@
-"""create restaurant table
+"""fix constraint in restaurant table
 
-Revision ID: f8a9f73a72a2
+Revision ID: 09e27d4763da
 Revises:
-Create Date: 2026-11-07 01:15:34.740365
+Create Date: 2026-11-18 17:56:21.431319
 
 """
 
@@ -14,7 +14,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "f8a9f73a72a2"
+revision: str = "09e27d4763da"
 down_revision: str | Sequence[str] | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -47,9 +47,9 @@ def upgrade() -> None:
         sa.Column("owner_id", sa.Integer(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("cuisine", sa.String(), nullable=False),
-        sa.Column("rating", sa.Float(), nullable=False),
+        sa.Column("rating", sa.Float(), nullable=True),
         sa.Column("mobile", sa.String(), nullable=False),
-        sa.Column("address", sa.String(), nullable=False),
+        sa.Column("address", sa.String(length=255), nullable=False),
         sa.Column("image", sa.String(), nullable=False),
         sa.Column("is_veg_only", sa.Boolean(), nullable=False),
         sa.Column("hours", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
@@ -57,6 +57,15 @@ def upgrade() -> None:
         sa.Column("is_active", sa.Boolean(), nullable=False),
         sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.CheckConstraint(
+            "length(cuisine) >= 2 AND length(cuisine) <= 50", name="restaurant_cuisine_len"
+        ),
+        sa.CheckConstraint(
+            "length(mobile) >= 10 AND length(mobile) <= 15", name="restaurant_mobile_fmt"
+        ),
+        sa.CheckConstraint("length(name) >= 2 AND length(name) <= 50", name="restaurant_name_len"),
+        sa.CheckConstraint("length(trim(address)) > 0", name="restaurant_address_not_empty"),
+        sa.CheckConstraint("rating >= 0.0 AND rating <= 5.0", name="restaurant_rating_range"),
         sa.ForeignKeyConstraint(["owner_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
