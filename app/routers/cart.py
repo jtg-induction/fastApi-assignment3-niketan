@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.middleware.auth import get_current_user_id
+from app.middleware.auth import get_customer_user_id
 from app.repositories.cart import CartRepository
 from app.schemas.cart import (
     CartActionResponse,
@@ -23,7 +23,7 @@ def get_cart_service(db: Annotated[AsyncSession, Depends(get_db)]) -> CartServic
 @cart_router.get("/all", response_model=list[CartResponse])
 async def get_all_carts(
     cart_service: Annotated[CartService, Depends(get_cart_service)],
-    user_id: Annotated[int, Depends(get_current_user_id)],
+    user_id: Annotated[int, Depends(get_customer_user_id)],
 ):
     """Retrieves all active carts belonging to the authenticated user.
 
@@ -41,7 +41,7 @@ async def get_all_carts(
 async def get_cart_by_restaurant(
     restaurant_id: int,
     cart_service: Annotated[CartService, Depends(get_cart_service)],
-    user_id: Annotated[int, Depends(get_current_user_id)],
+    user_id: Annotated[int, Depends(get_customer_user_id)],
 ):
     """Retrieves the active cart for a specific restaurant and user.
 
@@ -60,7 +60,7 @@ async def get_cart_by_restaurant(
 async def update_cart(
     body_data: CartUpdateRequest,
     cart_service: Annotated[CartService, Depends(get_cart_service)],
-    user_id: Annotated[int, Depends(get_current_user_id)],
+    user_id: Annotated[int, Depends(get_customer_user_id)],
 ):
     """Creates or updates a cart item quantity and removes empty carts.
 
@@ -79,7 +79,7 @@ async def update_cart(
 async def delete_cart(
     cart_id: int,
     cart_service: Annotated[CartService, Depends(get_cart_service)],
-    user_id: Annotated[int, Depends(get_current_user_id)],
+    user_id: Annotated[int, Depends(get_customer_user_id)],
 ):
     """Deletes a specific cart owned by the authenticated user.
 
