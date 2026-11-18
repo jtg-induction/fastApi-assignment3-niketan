@@ -1,23 +1,32 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Path, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.middleware.auth import get_current_user_id
-from app.schemas.restaurant import FilterParams, RestaurantBase, RestaurantCreateResponse
+from app.schemas.restaurant import (
+    FilterParams,
+    GetRestaurantResponse,
+    RestaurantBase,
+    RestaurantCreateResponse,
+)
 from app.services.restaurant import RestaurantService
 
-restaurant_router = APIRouter(prefix="/restaurant", tags=["restaurant"])
+restaurant_router = APIRouter(prefix="/restaurants", tags=["restaurant"])
+
+
+async def get_restaurant_service(db: Annotated[AsyncSession, Depends(get_db)]):
+    return RestaurantService(db)
 
 
 @restaurant_router.post(
-    "/create", status_code=status.HTTP_201_CREATED, response_model=RestaurantCreateResponse
+    "", status_code=status.HTTP_201_CREATED, response_model=RestaurantCreateResponse
 )
 async def create_restaurant(
     body_data: RestaurantBase,
-    db: Annotated[AsyncSession, Depends(get_db)],
-    user_id: int = Depends(get_current_user_id),
+    restaurant_service: Annotated[RestaurantService, Depends(get_restaurant_service)],
+    user_id: Annotated[int, Depends(get_current_user_id)],
 ):
     """Creates a new restaurant profile for the authenticated user.
 
@@ -29,14 +38,15 @@ async def create_restaurant(
     Returns:
         RestaurantCreateResponse: Details of the newly created restaurant.
     """
-    restaurant_service = RestaurantService(db)
     return await restaurant_service.create_restaurant(body_data, user_id)
 
 
-@restaurant_router.get("/all", status_code=status.HTTP_200_OK)
+@restaurant_router.get(
+    "", status_code=status.HTTP_200_OK, response_model=list[GetRestaurantResponse]
+)
 async def get_all_restaurants(
     filter_query: Annotated[FilterParams, Query()],
-    db: Annotated[AsyncSession, Depends(get_db)],
+    restaurant_service: Annotated[RestaurantService, Depends(get_restaurant_service)],
     user_id: int = Depends(get_current_user_id),
 ):
     """Retrieves a filtered and paginated list of restaurants.
@@ -49,14 +59,13 @@ async def get_all_restaurants(
     Returns:
         list[RestaurantResponse]: Matching active restaurants based on user role and filters.
     """
-    restaurant_service = RestaurantService(db)
-    return await restaurant_service.get_all_restaurant(user_id, filter_query)
+    return await restaurant_service.get_all_restaurants(user_id, filter_query)
 
 
 @restaurant_router.get("/{restaurant_id}", status_code=status.HTTP_200_OK)
 async def get_restaurant(
-    restaurant_id: int,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    restaurant_id: Annotated[int, Path(gt=0)],
+    restaurant_service: Annotated[RestaurantService, Depends(get_restaurant_service)],
     user_id: int = Depends(get_current_user_id),
 ):
     """Retrieves details for a specific restaurant by ID.
@@ -69,15 +78,14 @@ async def get_restaurant(
     Returns:
         RestaurantResponse: Detailed information for the requested restaurant.
     """
-    restaurant_service = RestaurantService(db)
     return await restaurant_service.get_restaurant(restaurant_id, user_id)
 
 
 @restaurant_router.put("/{restaurant_id}", status_code=status.HTTP_200_OK)
 async def update_restaurant(
-    restaurant_id: int,
+    restaurant_id: Annotated[int, Path(gt=0)],
     body_data: RestaurantBase,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    restaurant_service: Annotated[RestaurantService, Depends(get_restaurant_service)],
     user_id: int = Depends(get_current_user_id),
 ):
     """Updates an existing restaurant's information.
@@ -91,14 +99,13 @@ async def update_restaurant(
     Returns:
         RestaurantResponse: The updated restaurant record.
     """
-    restaurant_service = RestaurantService(db)
     return await restaurant_service.update_restaurant(restaurant_id, body_data, user_id)
 
 
 @restaurant_router.delete("/{restaurant_id}", status_code=status.HTTP_200_OK)
 async def delete_restaurant(
-    restaurant_id: int,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    restaurant_id: Annotated[int, Path(gt=0)],
+    restaurant_service: Annotated[RestaurantService, Depends(get_restaurant_service)],
     user_id: int = Depends(get_current_user_id),
 ):
     """Soft-deletes a restaurant owned by the authenticated user.
@@ -111,5 +118,4 @@ async def delete_restaurant(
     Returns:
         dict: Confirmation message indicating the restaurant was deleted.
     """
-    restaurant_service = RestaurantService(db)
     return await restaurant_service.delete_restaurant(restaurant_id, user_id)

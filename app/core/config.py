@@ -20,6 +20,7 @@ class Messages(str, Enum):
     RESTAURANT_CREATED = "Restaurant created successfully"
     RESTAURANT_DELETED = "Restaurant deleted successfully"
     RESTAURANT_NOT_FOUND = "Restaurant not found"
+    RESTAURANT_CREATE_FORBIDDEN = "Only owner can create restaurant"
     RESTAURANT_EDIT_FORBIDDEN = "Only owner can edit restaurant"
     RESTAURANT_DELETE_FORBIDDEN = "Only owner can delete restaurant"
     RESTAURANT_VIEW_FORBIDDEN = "You do not have permission to view this restaurant"
