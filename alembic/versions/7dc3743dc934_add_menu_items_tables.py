@@ -1,22 +1,8 @@
-<<<<<<< HEAD
-=======
-<<<<<<<< HEAD:alembic/versions/09e27d4763da_fix_constraint_in_restaurant_table.py
->>>>>>> 34769cd ([NG_A3_03]: implement the menu items endpoints)
-"""fix constraint in restaurant table
+"""add menu items tables
 
-Revision ID: 09e27d4763da
+Revision ID: 7dc3743dc934
 Revises:
-Create Date: 2026-11-18 17:56:21.431319
-<<<<<<< HEAD
-=======
-========
-"""create user,restaurant and menu items  table
-
-Revision ID: 63c59e50676d
-Revises:
-Create Date: 2026-11-09 11:17:09.624225
->>>>>>>> 5c2e342 ([NG_A3_03]: implement the menu items endpoints):alembic/versions/63c59e50676d_create_user_restaurant_and_menu_items_.py
->>>>>>> 34769cd ([NG_A3_03]: implement the menu items endpoints)
+Create Date: 2026-11-18 19:05:36.178306
 
 """
 
@@ -28,15 +14,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers, used by Alembic.
-<<<<<<< HEAD
-revision: str = "09e27d4763da"
-=======
-<<<<<<<< HEAD:alembic/versions/09e27d4763da_fix_constraint_in_restaurant_table.py
-revision: str = "09e27d4763da"
-========
-revision: str = "63c59e50676d"
->>>>>>>> 5c2e342 ([NG_A3_03]: implement the menu items endpoints):alembic/versions/63c59e50676d_create_user_restaurant_and_menu_items_.py
->>>>>>> 34769cd ([NG_A3_03]: implement the menu items endpoints)
+revision: str = "7dc3743dc934"
 down_revision: str | Sequence[str] | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

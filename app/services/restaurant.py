@@ -29,7 +29,7 @@ class RestaurantService:
         async with self.db.begin():
             user = await self.get_user(user_id)
             if user.role == UserRole.CUSTOMER:
-                raise_http_error(status.HTTP_403_FORBIDDEN, Messages.RESTAURANT_CREATE_FORBIDDEN)
+                raise_http_error(status.HTTP_403_FORBIDDEN, Messages.PERMISSION_DENIED)
 
             restaurant = await self.repo.create_restaurant(body_data, user_id)
         return restaurant
@@ -42,7 +42,7 @@ class RestaurantService:
             raise_http_error(status.HTTP_404_NOT_FOUND, Messages.RESTAURANT_NOT_FOUND)
 
         if user.role != "CUSTOMER" and restaurant.owner_id != user_id:
-            raise_http_error(status.HTTP_403_FORBIDDEN, Messages.RESTAURANT_VIEW_FORBIDDEN)
+            raise_http_error(status.HTTP_403_FORBIDDEN, Messages.PERMISSION_DENIED)
 
         return restaurant
 
@@ -53,14 +53,14 @@ class RestaurantService:
         async with self.db.begin():
             user = await self.get_user(user_id)
             if user.role == "CUSTOMER":
-                raise_http_error(status.HTTP_403_FORBIDDEN, Messages.RESTAURANT_EDIT_FORBIDDEN)
+                raise_http_error(status.HTTP_403_FORBIDDEN, Messages.PERMISSION_DENIED)
 
             restaurant = await self.repo.get_restaurant_by_id(restaurant_id, active_only=True)
             if not restaurant:
                 raise_http_error(status.HTTP_404_NOT_FOUND, Messages.RESTAURANT_NOT_FOUND)
 
             if restaurant.owner_id != user_id:
-                raise_http_error(status.HTTP_403_FORBIDDEN, Messages.RESTAURANT_NOT_OWNED)
+                raise_http_error(status.HTTP_403_FORBIDDEN, Messages.PERMISSION_DENIED)
 
             updated_restaurant = await self.repo.update_restaurant(restaurant, body_data)
 
@@ -72,14 +72,14 @@ class RestaurantService:
         async with self.db.begin():
             user = await self.get_user(user_id)
             if user.role == "CUSTOMER":
-                raise_http_error(status.HTTP_401_UNAUTHORIZED, Messages.RESTAURANT_DELETE_FORBIDDEN)
+                raise_http_error(status.HTTP_401_UNAUTHORIZED, Messages.PERMISSION_DENIED)
 
             restaurant = await self.repo.get_restaurant_by_id(restaurant_id, active_only=True)
             if not restaurant:
                 raise_http_error(status.HTTP_404_NOT_FOUND, Messages.RESTAURANT_NOT_FOUND)
 
             if restaurant.owner_id != user_id:
-                raise_http_error(status.HTTP_403_FORBIDDEN, Messages.RESTAURANT_NOT_OWNED)
+                raise_http_error(status.HTTP_403_FORBIDDEN, Messages.PERMISSION_DENIED)
 
             await self.repo.delete_restaurant(restaurant)
         return {"message": Messages.RESTAURANT_DELETED, "id": restaurant_id}
