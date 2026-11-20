@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.routers.Auth import auth_router
-from app.routers.menuItem import menu_item_router
+from app.routers.menu_item import menu_item_router
 from app.routers.restaurant import restaurant_router
 from app.routers.user import router
 
