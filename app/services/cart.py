@@ -1,7 +1,11 @@
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import Messages
+from app.core.constant import Messages
 from app.repositories.cart import CartRepository
+from app.repositories.menu_item import MenuRepository
+from app.repositories.restaurant import RestaurantRepository
 from app.schemas.cart import (
     CartActionResponse,
     CartResponse,
@@ -10,8 +14,11 @@ from app.schemas.cart import (
 
 
 class CartService:
-    def __init__(self, cart_repo: CartRepository):
-        self.cart_repo = cart_repo
+    def __init__(self, db: AsyncSession):
+        self.db = db
+        self.cart_repo = CartRepository(db)
+        self.restaurant_repo = RestaurantRepository(db)
+        self.menu_item_repo = MenuRepository(db)
 
     async def get_all_user_carts(self, user_id: int) -> list[CartResponse]:
         """Returns all active carts for the user."""
@@ -32,61 +39,71 @@ class CartService:
 
     async def update_cart(self, user_id: int, request: CartUpdateRequest) -> CartActionResponse:
         """Creates the cart if needed, updates item quantity, and cleans up empty carts."""
-        restaurant = await self.cart_repo.get_restaurant_by_id(request.restaurantId)
-        if not restaurant:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=Messages.RESTAURANT_NOT_FOUND,
-            )
-
-        menu_item = await self.cart_repo.get_menu_item_by_id(request.menuItemId)
-        if not menu_item:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=Messages.MENU_ITEM_NOT_FOUND,
-            )
-
-        if menu_item.restaurant_id != request.restaurantId:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=Messages.CART_ITEM_WRONG_RESTAURANT,
-            )
-
-        cart = await self.cart_repo.get_cart_by_user_and_restaurant(
-            user_id=user_id, restaurant_id=request.restaurantId
-        )
-
-        if request.count > 0:
-            if menu_item.stock <= 0:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=Messages.CART_ITEM_OUT_OF_STOCK.format(name=menu_item.name),
-                )
-            if request.count > menu_item.stock:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=Messages.CART_ITEM_INSUFFICIENT_STOCK.format(
-                        stock=menu_item.stock, name=menu_item.name
-                    ),
-                )
-
-        if not cart:
-            if request.count == 0:
+        try:
+            restaurant = await self.restaurant_repo.get_restaurant_by_id(request.restaurant_id)
+            if not restaurant:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=Messages.CART_DOES_NOT_EXIST,
+                    detail=Messages.RESTAURANT_NOT_FOUND,
                 )
-            cart = await self.cart_repo.create_cart(
-                user_id=user_id, restaurant_id=request.restaurantId
+
+            menu_item = await self.menu_item_repo.get_menu_item_by_id(request.menu_item_id)
+            if not menu_item:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=Messages.MENU_ITEM_NOT_FOUND,
+                )
+
+            if menu_item.restaurant_id != request.restaurant_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=Messages.CART_ITEM_WRONG_RESTAURANT,
+                )
+
+            cart = await self.cart_repo.get_cart_by_user_and_restaurant(
+                user_id=user_id, restaurant_id=request.restaurant_id
             )
 
-        updated_cart = await self.cart_repo.upsert_cart_item(
-            cart_id=cart.id,
-            menu_item_id=request.menuItemId,
-            count=request.count,
-        )
-        cart_data = CartResponse.model_validate(updated_cart) if updated_cart else None
-        await self.cart_repo.db.commit()
+            if request.count > 0:
+                if menu_item.stock <= 0:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=Messages.CART_ITEM_OUT_OF_STOCK.format(name=menu_item.name),
+                    )
+                if request.count > menu_item.stock:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=Messages.CART_ITEM_INSUFFICIENT_STOCK.format(
+                            stock=menu_item.stock, name=menu_item.name
+                        ),
+                    )
+
+            if not cart:
+                if request.count == 0:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=Messages.CART_DOES_NOT_EXIST,
+                    )
+                cart = await self.cart_repo.create_cart(
+                    user_id=user_id, restaurant_id=request.restaurant_id
+                )
+
+            updated_cart = await self.cart_repo.upsert_cart_item(
+                cart_id=cart.id,
+                menu_item_id=request.menu_item_id,
+                count=request.count,
+            )
+            cart_data = CartResponse.model_validate(updated_cart) if updated_cart else None
+            await self.db.commit()
+        except IntegrityError as exc:
+            await self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Cart could not be updated due to a database constraint conflict.",
+            ) from exc
+        except Exception:
+            await self.db.rollback()
+            raise
 
         if not cart_data:
             return CartActionResponse(
@@ -102,21 +119,30 @@ class CartService:
         )
 
     async def delete_cart(self, cart_id: int, user_id: int) -> CartActionResponse:
-        cart = await self.cart_repo.get_cart_by_id(cart_id=cart_id)
-        if not cart:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Cart not found.",
-            )
-        if cart.user_id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=Messages.CART_DELETE_FORBIDDEN,
-            )
+        try:
+            cart = await self.cart_repo.get_cart_by_id(cart_id=cart_id)
+            if not cart:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=Messages.CART_NOT_FOUND,
+                )
+            if cart.user_id != user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=Messages.CART_DELETE_FORBIDDEN,
+                )
 
-        await self.cart_repo.delete_cart(cart=cart)
-        await self.cart_repo.db.commit()
-
+            await self.cart_repo.delete_cart(cart=cart)
+            await self.cart_repo.db.commit()
+        except IntegrityError as exc:
+            await self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Cart could not be deleted due to a database constraint conflict.",
+            ) from exc
+        except Exception:
+            await self.db.rollback()
+            raise
         return CartActionResponse(
             success=True,
             message=Messages.CART_DELETED,

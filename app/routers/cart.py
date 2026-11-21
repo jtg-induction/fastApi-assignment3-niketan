@@ -1,11 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.middleware.auth import get_current_user_id
-from app.repositories.cart import CartRepository
 from app.schemas.cart import (
     CartActionResponse,
     CartResponse,
@@ -17,10 +16,10 @@ cart_router = APIRouter(prefix="/carts", tags=["Cart Management"])
 
 
 def get_cart_service(db: Annotated[AsyncSession, Depends(get_db)]) -> CartService:
-    return CartService(CartRepository(db))
+    return CartService(db)
 
 
-@cart_router.get("/all", response_model=list[CartResponse])
+@cart_router.get("", status_code=status.HTTP_200_OK, response_model=list[CartResponse])
 async def get_all_carts(
     cart_service: Annotated[CartService, Depends(get_cart_service)],
     user_id: Annotated[int, Depends(get_current_user_id)],
@@ -37,7 +36,9 @@ async def get_all_carts(
     return await cart_service.get_all_user_carts(user_id=user_id)
 
 
-@cart_router.get("/restaurant/{restaurant_id}", response_model=CartResponse)
+@cart_router.get(
+    "/restaurant/{restaurant_id}", status_code=status.HTTP_200_OK, response_model=CartResponse
+)
 async def get_cart_by_restaurant(
     restaurant_id: int,
     cart_service: Annotated[CartService, Depends(get_cart_service)],
@@ -56,7 +57,7 @@ async def get_cart_by_restaurant(
     return await cart_service.get_cart_for_restaurant(user_id=user_id, restaurant_id=restaurant_id)
 
 
-@cart_router.put("/", response_model=CartActionResponse)
+@cart_router.put("", status_code=status.HTTP_200_OK, response_model=CartActionResponse)
 async def update_cart(
     body_data: CartUpdateRequest,
     cart_service: Annotated[CartService, Depends(get_cart_service)],
@@ -75,7 +76,7 @@ async def update_cart(
     return await cart_service.update_cart(user_id=user_id, request=body_data)
 
 
-@cart_router.delete("/{cart_id}", response_model=CartActionResponse)
+@cart_router.delete("/{cart_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 async def delete_cart(
     cart_id: int,
     cart_service: Annotated[CartService, Depends(get_cart_service)],
