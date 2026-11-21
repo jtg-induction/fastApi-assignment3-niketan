@@ -5,8 +5,8 @@ from fastapi.responses import JSONResponse
 
 import app.models
 from app.routers.Auth import auth_router
-from app.routers.menu_item import menu_item_router
 from app.routers.cart import cart_router
+from app.routers.menu_item import menu_item_router
 from app.routers.Order import order_router
 from app.routers.restaurant import restaurant_router
 from app.routers.user import router
