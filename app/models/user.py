@@ -1,10 +1,9 @@
-import re
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 from pwdlib import PasswordHash
 from sqlalchemy import CheckConstraint, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
 from app.models.restaurant import Restaurant
@@ -37,26 +36,8 @@ class User(Base):
         "Restaurant", back_populates="owner", cascade="all, delete-orphan"
     )
     carts: Mapped[list["Cart"]] = relationship(
-        "Cart", back_populates="user", cascade="all, delete-orphan"
+        "Cart", back_populates="user", cascade="all, delete-orphan", lazy="raise"
     )
-
-    @validates("name")
-    def validate_name(self, key, value) -> str:
-        if not (2 <= len(value) <= 50):
-            raise ValueError("Name must be between 2 and 50 characters.")
-        return value
-
-    @validates("mobile")
-    def validate_mobile(self, key, value) -> str:
-        if not re.match(r"^\+?[1-9]\d{9,14}$", value):
-            raise ValueError("Invalid mobile number format. Must be 10-15 digits.")
-        return value
-
-    @validates("refresh_token")
-    def validate_and_hash_refresh_token(self, key, value) -> str | None:
-        if value is None:
-            return None
-        return pwd_context.hash(value)
 
     def __repr__(self) -> str:
         return (

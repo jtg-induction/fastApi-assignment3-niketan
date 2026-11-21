@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from sqlalchemy import CheckConstraint, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
 
@@ -25,7 +25,7 @@ class Cart(Base):
     user: Mapped["User"] = relationship("User", back_populates="carts")
     restaurant: Mapped["Restaurant"] = relationship("Restaurant", back_populates="carts")
     cart_items: Mapped[list["CartItem"]] = relationship(
-        "CartItem", back_populates="cart", cascade="all, delete-orphan"
+        "CartItem", back_populates="cart", cascade="all, delete-orphan", lazy="raise"
     )
 
 
@@ -43,14 +43,8 @@ class CartItem(Base):
     )
     count: Mapped[int] = mapped_column(default=1)
 
-    cart: Mapped["Cart"] = relationship("Cart", back_populates="cart_items")
+    cart: Mapped["Cart"] = relationship("Cart", back_populates="cart_items", lazy="raise")
     menu_item: Mapped["MenuItem"] = relationship("MenuItem")
-
-    @validates("count")
-    def validate_count(self, key: str, value: int) -> int:
-        if value < 1:
-            raise ValueError("Item quantity count in cart must be at least 1.")
-        return value
 
     def __repr__(self) -> str:
         return (
