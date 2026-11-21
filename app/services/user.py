@@ -1,6 +1,9 @@
+import hashlib
+
 import anyio
 from fastapi import HTTPException, status
 from pwdlib import PasswordHash
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constant import Messages
@@ -33,6 +36,13 @@ class UserService:
         Returns:
             User: The newly created and persisted SQLAlchemy User model instance.
         """
+        normalized_email = schema_data.email.strip().lower()
+
+        lock_key = int.from_bytes(
+            hashlib.sha256(normalized_email.encode()).digest()[:8], "big", signed=True
+        )
+        await self.db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": lock_key})
+
         existing_user = await self.repo.get_by_email(schema_data.email)
         if existing_user:
             raise HTTPException(
