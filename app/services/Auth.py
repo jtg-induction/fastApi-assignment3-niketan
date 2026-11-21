@@ -7,8 +7,7 @@ from jwt.exceptions import InvalidTokenError
 from pwdlib import PasswordHash
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import Messages, settings
-from app.core.constant import access_token_max_age, refresh_token_max_age
+from app.core.constant import ACCESS_TOKEN_MAX_AGE, REFRESH_TOKEN_MAX_AGE, Messages, settings
 from app.repositories.user import UserRepository
 from app.schemas.user import (
     LoginUserRequest,
@@ -85,12 +84,13 @@ class AuthService:
 
         access_token = self.generate_access_token(existing_user.id)
         refresh_token = self.generate_refresh_token(existing_user.id)
+        hashed_refresh_token = await anyio.to_thread.run_sync(self.pwd_context.hash, refresh_token)
 
         user_data = {
             c.name: getattr(existing_user, c.name) for c in existing_user.__table__.columns
         }
         try:
-            await self.repo.update_refresh_token(existing_user, refresh_token)
+            await self.repo.update_refresh_token(existing_user, hashed_refresh_token)
             await self.db.commit()
         except Exception:
             await self.db.rollback()
@@ -102,7 +102,7 @@ class AuthService:
             httponly=False,
             secure=True,
             samesite="none",
-            max_age=refresh_token_max_age,
+            max_age=REFRESH_TOKEN_MAX_AGE,
         )
         response.set_cookie(
             key="access_token",
@@ -110,7 +110,7 @@ class AuthService:
             httponly=False,
             secure=True,
             samesite="none",
-            max_age=access_token_max_age,
+            max_age=ACCESS_TOKEN_MAX_AGE,
         )
         return {
             "data": user_data,
@@ -156,7 +156,7 @@ class AuthService:
             httponly=False,
             secure=True,
             samesite="none",
-            max_age=access_token_max_age,
+            max_age=ACCESS_TOKEN_MAX_AGE,
             path="/",
         )
         return {"message": Messages.TOKEN_REFRESH_SUCCESS, "token": new_access_token}

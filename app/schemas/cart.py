@@ -2,25 +2,38 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class CartItemBase(BaseModel):
-    menuItemId: int = Field(alias="menu_item_id")
+    menu_item_id: int = Field(alias="menuItemId")
     count: int = Field(ge=1)
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )
 
 
 class CartItemCreateUpdate(BaseModel):
-    menuItemId: int
+    menu_item_id: int = Field(alias="menuItemId")
     count: int = Field(ge=1)
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class CartItemResponse(CartItemBase):
     id: int
-    cartId: int = Field(alias="cart_id")
+    cart_id: int = Field(alias="cartId")
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )
 
 
 class CartBase(BaseModel):
-    restaurantId: int
+    restaurant_id: int = Field(alias="restaurantId")
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class CartCreate(CartBase):
@@ -29,23 +42,31 @@ class CartCreate(CartBase):
 
 class CartResponse(BaseModel):
     id: int
-    userId: int = Field(alias="user_id")
-    restaurantId: int = Field(alias="restaurant_id")
-    items: list[CartItemResponse] = Field(default=[], alias="cart_items")
+    user_id: int = Field(alias="userId")
+    restaurant_id: int = Field(alias="restaurantId")
+    cart_items: list[CartItemResponse] = Field(default=[], alias="items")
 
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )
 
 
 class AddToCartRequest(BaseModel):
-    restaurantId: int
-    menuItemId: int
+    restaurant_id: int = Field(alias="restaurantId")
+    menu_item_id: int = Field(alias="menuItemId")
     count: int = Field(default=1, ge=1)
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class CartUpdateRequest(BaseModel):
-    restaurantId: int
-    menuItemId: int
+    restaurant_id: int = Field(alias="restaurantId")
+    menu_item_id: int = Field(alias="menuItemId")
     count: int = Field(ge=0, description="Set to 0 to remove the item from the cart")
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class UpdateCartItemRequest(BaseModel):

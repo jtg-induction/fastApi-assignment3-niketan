@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from pwdlib import PasswordHash
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import Messages
+from app.core.constant import Messages
 from app.models.user import User
 from app.repositories.user import UserRepository
 from app.schemas.user import (

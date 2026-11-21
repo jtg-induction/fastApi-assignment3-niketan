@@ -1,7 +1,7 @@
 from fastapi import status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import Messages
+from app.core.constant import Messages
 from app.models.restaurant import Restaurant
 from app.models.user import UserRole
 from app.repositories.restaurant import RestaurantRepository
