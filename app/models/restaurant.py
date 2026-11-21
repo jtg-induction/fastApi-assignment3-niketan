@@ -8,6 +8,7 @@ from app.db.session import Base
 
 if TYPE_CHECKING:
     from app.models.menu_item import MenuItem
+    from app.models.cart import Cart
     from app.models.user import User
 
 
@@ -39,6 +40,10 @@ class Restaurant(Base):
         back_populates="restaurant",
         cascade="all, delete-orphan",
         lazy="raise",
+    )
+
+    carts: Mapped[list["Cart"]] = relationship(
+        "Cart", back_populates="restaurant", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:

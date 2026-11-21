@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
-from app.core.config import Messages
+from app.core.constant import Messages
 
 
 class FilterParams(BaseModel):
