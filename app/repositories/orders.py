@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.cart import Cart
-from app.models.menuItem import MenuItem
+from app.models.menu_item import MenuItem
 from app.models.orders import Order, OrderItem
 from app.models.restaurant import Restaurant
 
@@ -42,6 +42,7 @@ class OrderRepository:
             .options(
                 selectinload(Order.order_items),
                 selectinload(Order.restaurant),
+                selectinload(Order.customer),
             )
             .where(Order.id == order_id)
             .execution_options(populate_existing=True)
@@ -68,6 +69,7 @@ class OrderRepository:
             .options(
                 selectinload(Order.order_items),
                 selectinload(Order.restaurant),
+                selectinload(Order.customer),
             )
             .where(
                 or_(

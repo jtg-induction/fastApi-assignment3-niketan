@@ -7,8 +7,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.session import Base
 
 if TYPE_CHECKING:
-    from app.models.menu_item import MenuItem
     from app.models.cart import Cart
+    from app.models.menu_item import MenuItem
     from app.models.orders import Order
     from app.models.user import User
 

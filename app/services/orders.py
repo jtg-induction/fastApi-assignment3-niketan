@@ -93,14 +93,14 @@ class OrderService:
         return OrderActionResponse(
             success=True,
             msg="Order placed successfully.",
-            order=created_order,
+            order=OrderResponse.model_validate(created_order),
         )
 
     async def get_order_details(self, user_id, order_id) -> OrderResponse:
         order = await self.order_repo.get_order_by_id(order_id)
         if not order:
             raise_http_error(404, "order not found")
-        if order.customer_id != user_id or order.restaurant.owner_id != user_id:
+        if order.customer_id != user_id and order.restaurant.owner_id != user_id:
             raise_http_error(403, "not authorized to view this order")
         return order
 
