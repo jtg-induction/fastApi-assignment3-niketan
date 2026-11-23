@@ -43,7 +43,7 @@ class Order(Base):
 
 
 class OrderItem(Base):
-    __tablename__ = "orderItems"
+    __tablename__ = "order_items"
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), index=True)
     menu_item_id: Mapped[int | None] = mapped_column(
         ForeignKey("menu_items.id", ondelete="SET NULL"), nullable=True
