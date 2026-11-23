@@ -1,31 +1,5 @@
-from enum import Enum
-
 from pydantic import Field, PostgresDsn, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-
-class Messages(str, Enum):
-    EMAIL_EXISTS = "Email already exists"
-    AUTH_FAILED = "Email or password is incorrect"
-    ACCOUNT_INACTIVE = "Your account is inactive. Please contact support."
-    TOKEN_MISSING = "Refresh token missing"
-    TOKEN_INVALID = "Invalid token"
-    SESSION_EXPIRED = "Session expired or user inactive"
-    TOKEN_WRONG = "Wrong token"
-    USER_NOT_FOUND = "User not found"
-    LOGIN_SUCCESS = "User logged in successfully"
-    TOKEN_REFRESH_SUCCESS = "New Access Token generated successfully"
-    LOGOUT_SUCCESS = "Logged out successfully"
-
-    RESTAURANT_CREATED = "Restaurant created successfully"
-    RESTAURANT_DELETED = "Restaurant deleted successfully"
-    RESTAURANT_NOT_FOUND = "Restaurant not found"
-
-    MENU_ITEM_CREATED = "Menu item created successfully"
-    MENU_ITEM_DELETED = "Menu item deleted successfully"
-    MENU_ITEM_NOT_FOUND = "Menu item not found"
-    MENU_ITEM_ALREADY_EXISTS = "Menu item already exists with this name"
-    PERMISSION_DENIED = "You do not have permission to perform this action"
 
 
 class Settings(BaseSettings):

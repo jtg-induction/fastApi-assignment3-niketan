@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
@@ -12,7 +13,7 @@ class MenuItemBase(BaseModel):
     restaurant_id: int
     name: str = Field(min_length=1, max_length=100)
     description: str = Field(max_length=500)
-    price: int = Field(ge=0)
+    price: Decimal = Field(ge=0)
     category: str
     is_veg: bool = Field(alias="isVeg")
     stock: int = Field(ge=0)
@@ -23,7 +24,7 @@ class MenuItemBase(BaseModel):
 class MenuItemUpdateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     description: str = Field(max_length=500)
-    price: int = Field(ge=0)
+    price: Decimal = Field(ge=0)
     category: str
     is_veg: bool = Field(alias="isVeg")
     stock: int = Field(ge=0)
