@@ -40,3 +40,12 @@ class Messages(str, Enum):
     CART_DELETE_FORBIDDEN = "Not authorized to delete this cart."
     CART_DELETED = "Cart deleted successfully."
     CART_CONFLICT = "Cart could not be updated due to a database constraint conflict."
+
+    ORDER_PLACED = "Order placed successfully."
+    ORDER_NOT_FOUND = "Order not found."
+    ORDER_VIEW_FORBIDDEN = "Not authorized to view this order."
+    ORDER_UPDATE_FORBIDDEN = "Only the owner of this restaurant can update the order status."
+    ORDER_INSUFFICIENT_STOCK = "Insufficient stock for '{name}'. Available: {stock}"
+    ORDER_STATUS_ALREADY_SET = "Order status is already {status}."
+    ORDER_INVALID_TRANSITION = "Cannot transition order from {current_status} to {new_status}."
+    ORDER_STATUS_UPDATED = "Order status updated to {status}."
