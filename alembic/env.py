@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from alembic import context
 from app.core.config import settings
 from app.db.session import Base
+from app.models.menu_item import MenuItem
 from app.models.restaurant import Restaurant
 from app.models.user import User
 
